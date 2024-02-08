@@ -15,14 +15,51 @@ services:
       SMTP_PORT: "1025"
       SMTP_SERVER: smtplocal
     restart: unless-stopped
+    hostname: "code17.said.ar"
     depends_on:
       - db
       - smtp
     networks:
       default:
       globalwhitelist_shared:
+      inverseproxy_shared:
     labels:
-      doodba.domain.main: ""
+      doodba.domain.main: "code17.said.ar"
+      traefik.enable: "true"
+      traefik.domain: "code17.said.ar"
+      traefik.forbiddenCrawlers-0.frontend.headers.customResponseHeaders:
+        "X-Robots-Tag:noindex, nofollow"
+      traefik.forbiddenCrawlers-0.frontend.rule: Host:code17.said.ar;Path:/{anything:.*}
+      traefik.longpolling-0.frontend.rule: Host:code17.said.ar;Path:/websocket,/websocket/{anything:.*}
+      traefik.longpolling-0.port: 8072
+      traefik.http.services.code17-17-0-test-main.loadbalancer.server.port: 8069
+      traefik.http.services.code17-17-0-test-longpolling.loadbalancer.server.port: 8072
+      traefik.http.routers.code17-17-0-test-longpolling-0.rule:
+        Host(`code17.said.ar`) && Path(`/websocket`)
+      traefik.http.routers.code17-17-0-test-longpolling-0.service: code17-17-0-test-longpolling
+      traefik.http.routers.code17-17-0-test-longpolling-0.middlewares:
+        code17-17-0-test-addSTS, code17-17-0-test-forceSecure
+      traefik.http.routers.code17-17-0-test-longpolling-secure-0.rule:
+        Host(`code17.said.ar`) && Path(`/websocket`)
+      traefik.http.routers.code17-17-0-test-longpolling-secure-0.service: code17-17-0-test-longpolling
+      traefik.http.routers.code17-17-0-test-longpolling-secure-0.middlewares:
+        code17-17-0-test-addSTS, code17-17-0-test-forceSecure
+      traefik.http.routers.code17-17-0-test-longpolling-secure-0.tls: "true"
+      traefik.http.routers.code17-17-0-test-longpolling-secure-0.tls.certResolver: letsencrypt
+      traefik.http.routers.code17-17-0-test-forbiddenCrawlers-0.rule:
+        Host(`code17.said.ar`) && (PathPrefix(`/`))
+      traefik.http.routers.code17-17-0-test-forbiddenCrawlers-0.service: code17-17-0-test-main
+      traefik.http.routers.code17-17-0-test-forbiddenCrawlers-0.middlewares:
+        code17-17-0-test-addSTS, code17-17-0-test-buffering, code17-17-0-test-compress,
+        code17-17-0-test-forbid-crawlers, code17-17-0-test-forceSecure
+      traefik.http.routers.code17-17-0-test-forbiddenCrawlers-secure-0.rule:
+        Host(`code17.said.ar`) && (PathPrefix(`/`))
+      traefik.http.routers.code17-17-0-test-forbiddenCrawlers-secure-0.service: code17-17-0-test-main
+      traefik.http.routers.code17-17-0-test-forbiddenCrawlers-secure-0.middlewares:
+        code17-17-0-test-addSTS, code17-17-0-test-buffering, code17-17-0-test-compress,
+        code17-17-0-test-forbid-crawlers, code17-17-0-test-forceSecure
+      traefik.http.routers.code17-17-0-test-forbiddenCrawlers-secure-0.tls: "true"
+      traefik.http.routers.code17-17-0-test-forbiddenCrawlers-secure-0.tls.certResolver: letsencrypt
     command:
       - odoo
       - --workers=2
@@ -45,8 +82,41 @@ services:
       default:
         aliases:
           - smtplocal
+      inverseproxy_shared:
     labels:
-      doodba.domain.main: ""
+      doodba.domain.main: "code17.said.ar"
+      traefik.docker.network: "inverseproxy_shared"
+      traefik.enable: "true"
+      traefik.frontend.passHostHeader: "true"
+      traefik.mailhog-0.frontend.rule: Host:code17.said.ar;PathPrefixStrip:/smtpfake/
+      traefik.mailhog-0.port: 8025
+      # Mailhog service
+      traefik.http.middlewares.code17-17-0-test-mailhog-stripprefix.stripPrefix.prefixes: /smtpfake/
+      traefik.http.services.code17-17-0-test-mailhog.loadbalancer.server.port: 8025
+      traefik.http.middlewares.code17-17-0-test-buffering.buffering.retryExpression:
+        IsNetworkError() && Attempts() < 5
+      traefik.http.middlewares.code17-17-0-test-compress.compress: "true"
+      traefik.http.middlewares.code17-17-0-test-forbid-crawlers.headers.customResponseHeaders.X-Robots-Tag:
+        "noindex, nofollow"
+      traefik.http.middlewares.code17-17-0-test-addSTS.headers.forceSTSHeader: "true"
+      traefik.http.middlewares.code17-17-0-test-forceSecure.redirectScheme.scheme: https
+      traefik.http.middlewares.code17-17-0-test-forceSecure.redirectScheme.permanent: "true"
+      traefik.http.routers.code17-17-0-test-mailhog-0.rule:
+        Host(`code17.said.ar`) && PathPrefix(`/smtpfake/`)
+      traefik.http.routers.code17-17-0-test-mailhog-0.service: code17-17-0-test-mailhog
+      traefik.http.routers.code17-17-0-test-mailhog-0.middlewares:
+        code17-17-0-test-addSTS, code17-17-0-test-buffering, code17-17-0-test-compress,
+        code17-17-0-test-forbid-crawlers, code17-17-0-test-forceSecure,
+        code17-17-0-test-mailhog-stripprefix
+      traefik.http.routers.code17-17-0-test-mailhog-secure-0.rule:
+        Host(`code17.said.ar`) && PathPrefix(`/smtpfake/`)
+      traefik.http.routers.code17-17-0-test-mailhog-secure-0.service: code17-17-0-test-mailhog
+      traefik.http.routers.code17-17-0-test-mailhog-secure-0.middlewares:
+        code17-17-0-test-addSTS, code17-17-0-test-buffering, code17-17-0-test-compress,
+        code17-17-0-test-forbid-crawlers, code17-17-0-test-forceSecure,
+        code17-17-0-test-mailhog-stripprefix
+      traefik.http.routers.code17-17-0-test-mailhog-secure-0.tls: "true"
+      traefik.http.routers.code17-17-0-test-mailhog-secure-0.tls.certResolver: letsencrypt
     volumes:
       - "smtpconf:/etc/mailhog:ro,z"
     entrypoint: [sh, -c]

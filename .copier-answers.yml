@@ -3,8 +3,12 @@ _commit: v6.0.1
 _src_path: gh:Tecnativa/doodba-copier-template
 backup_dst: ""
 cidr_whitelist: null
-domains_prod: {}
-domains_test: {}
+domains_prod:
+  - hosts:
+      - code17.said.ar
+domains_test:
+  - hosts:
+      - code17.said.ar
 gitlab_url: ""
 odoo_dbfilter: ^prod
 odoo_initial_lang: en_US

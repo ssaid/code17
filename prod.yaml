@@ -6,6 +6,7 @@ services:
       file: common.yaml
       service: odoo
     restart: unless-stopped
+    hostname: "code17.said.ar"
     env_file:
       - .docker/odoo.env
       - .docker/db-access.env
@@ -17,8 +18,67 @@ services:
       - db
     networks:
       default:
+      inverseproxy_shared:
     labels:
-      doodba.domain.main: ""
+      doodba.domain.main: "code17.said.ar"
+      traefik.enable: "true"
+      traefik.domain: "code17.said.ar"
+      traefik.forbiddenCrawlers-0.frontend.headers.customResponseHeaders:
+        "X-Robots-Tag:noindex, nofollow"
+      traefik.forbiddenCrawlers-0.frontend.rule: Host:code17.said.ar;Path:/web,/web/{anything:.*},/website/info,/website/info/{anything:.*}
+      traefik.main-0.frontend.rule: Host:code17.said.ar
+      traefik.longpolling-0.frontend.rule: Host:code17.said.ar;Path:/websocket,/websocket/{anything:.*}
+      traefik.longpolling-0.port: 8072
+      traefik.http.middlewares.code17-17-0-prod-buffering.buffering.retryExpression:
+        IsNetworkError() && Attempts() < 5
+      traefik.http.middlewares.code17-17-0-prod-compress.compress: "true"
+      traefik.http.middlewares.code17-17-0-prod-forbid-crawlers.headers.customResponseHeaders.X-Robots-Tag:
+        "noindex, nofollow"
+      traefik.http.middlewares.code17-17-0-prod-addSTS.headers.forceSTSHeader: "true"
+      traefik.http.middlewares.code17-17-0-prod-forceSecure.redirectScheme.scheme: https
+      traefik.http.middlewares.code17-17-0-prod-forceSecure.redirectScheme.permanent: "true"
+      traefik.http.services.code17-17-0-prod-main.loadbalancer.server.port: 8069
+      traefik.http.services.code17-17-0-prod-longpolling.loadbalancer.server.port: 8072
+      traefik.http.routers.code17-17-0-prod-main-0.rule: Host(`code17.said.ar`)
+      traefik.http.routers.code17-17-0-prod-main-0.service: code17-17-0-prod-main
+      traefik.http.routers.code17-17-0-prod-main-0.middlewares:
+        code17-17-0-prod-addSTS, code17-17-0-prod-buffering, code17-17-0-prod-compress,
+        code17-17-0-prod-forceSecure
+      traefik.http.routers.code17-17-0-prod-main-secure-0.rule: Host(`code17.said.ar`)
+      traefik.http.routers.code17-17-0-prod-main-secure-0.service: code17-17-0-prod-main
+      traefik.http.routers.code17-17-0-prod-main-secure-0.middlewares:
+        code17-17-0-prod-addSTS, code17-17-0-prod-buffering, code17-17-0-prod-compress,
+        code17-17-0-prod-forceSecure
+      traefik.http.routers.code17-17-0-prod-main-secure-0.tls: "true"
+      traefik.http.routers.code17-17-0-prod-main-secure-0.tls.certResolver: letsencrypt
+      traefik.http.routers.code17-17-0-prod-longpolling-0.rule:
+        Host(`code17.said.ar`) && Path(`/websocket`)
+      traefik.http.routers.code17-17-0-prod-longpolling-0.service: code17-17-0-prod-longpolling
+      traefik.http.routers.code17-17-0-prod-longpolling-0.middlewares:
+        code17-17-0-prod-addSTS, code17-17-0-prod-forceSecure
+      traefik.http.routers.code17-17-0-prod-longpolling-secure-0.rule:
+        Host(`code17.said.ar`) && Path(`/websocket`)
+      traefik.http.routers.code17-17-0-prod-longpolling-secure-0.service: code17-17-0-prod-longpolling
+      traefik.http.routers.code17-17-0-prod-longpolling-secure-0.middlewares:
+        code17-17-0-prod-addSTS, code17-17-0-prod-forceSecure
+      traefik.http.routers.code17-17-0-prod-longpolling-secure-0.tls: "true"
+      traefik.http.routers.code17-17-0-prod-longpolling-secure-0.tls.certResolver: letsencrypt
+      traefik.http.routers.code17-17-0-prod-forbiddenCrawlers-0.rule:
+        Host(`code17.said.ar`) && (PathPrefix(`/web/`, `/website/info/`) || Path(`/web`,
+        `/website/info`))
+      traefik.http.routers.code17-17-0-prod-forbiddenCrawlers-0.service: code17-17-0-prod-main
+      traefik.http.routers.code17-17-0-prod-forbiddenCrawlers-0.middlewares:
+        code17-17-0-prod-addSTS, code17-17-0-prod-buffering, code17-17-0-prod-compress,
+        code17-17-0-prod-forbid-crawlers, code17-17-0-prod-forceSecure
+      traefik.http.routers.code17-17-0-prod-forbiddenCrawlers-secure-0.rule:
+        Host(`code17.said.ar`) && (PathPrefix(`/web/`, `/website/info/`) || Path(`/web`,
+        `/website/info`))
+      traefik.http.routers.code17-17-0-prod-forbiddenCrawlers-secure-0.service: code17-17-0-prod-main
+      traefik.http.routers.code17-17-0-prod-forbiddenCrawlers-secure-0.middlewares:
+        code17-17-0-prod-addSTS, code17-17-0-prod-buffering, code17-17-0-prod-compress,
+        code17-17-0-prod-forbid-crawlers, code17-17-0-prod-forceSecure
+      traefik.http.routers.code17-17-0-prod-forbiddenCrawlers-secure-0.tls: "true"
+      traefik.http.routers.code17-17-0-prod-forbiddenCrawlers-secure-0.tls.certResolver: letsencrypt
 
   db:
     extends:
