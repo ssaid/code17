@@ -16,6 +16,35 @@ services:
       PORT: "6899 8069 8072"
       TARGET: odoo
 
+  code-server:
+    image: lscr.io/linuxserver/code-server:latest
+    container_name: code-server
+    labels:
+      - traefik.http.routers.code17editor.rule=Host(`code17-editor.said.ar`)
+      - traefik.enable=true
+      - traefik.docker.network=inverseproxy_shared
+      - traefik.http.routers.code17editor.entrypoints=websecure
+      - traefik.http.routers.code17editor.tls.certResolver=letsencrypt
+      - traefik.http.services.code17editor.loadbalancer.server.port=8443
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC-3
+      - PASSWORD=password #optional
+      #      - HASHED_PASSWORD= #optional
+      - SUDO_PASSWORD=password #optional
+      #      - SUDO_PASSWORD_HASH= #optional
+      #      - PROXY_DOMAIN=code-server.my.domain #optional
+      - DEFAULT_WORKSPACE=/config/workspace #optional
+    volumes:
+      - ./:/config/workspace
+    ports:
+      - 8443:8443
+    restart: unless-stopped
+    networks:
+      default:
+      inverseproxy_shared:
+
   odoo:
     extends:
       file: common.yaml
@@ -43,6 +72,13 @@ services:
       WDB_WEB_PORT: "17984"
       # To avoid installing demo data export DOODBA_WITHOUT_DEMO=all
       WITHOUT_DEMO: "${DOODBA_WITHOUT_DEMO-false}"
+    labels:
+      - traefik.http.routers.code17odoo.rule=Host(`code17.said.ar`)
+      - traefik.enable=true
+      - traefik.docker.network=inverseproxy_shared
+      - traefik.http.routers.code17odoo.entrypoints=websecure
+      - traefik.http.routers.code17odoo.tls.certResolver=letsencrypt
+      - traefik.http.services.code17odoo.loadbalancer.server.port=8069
     volumes:
       - ./odoo/custom:/opt/odoo/custom:ro,z
       - ./odoo/auto:/opt/odoo/auto:rw,z
@@ -169,6 +205,8 @@ networks:
   default:
     internal: ${DOODBA_NETWORK_INTERNAL-true}
   public:
+  inverseproxy_shared:
+    external: true
 
 volumes:
   filestore:
