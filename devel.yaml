@@ -18,7 +18,6 @@ services:
 
   code-server:
     image: lscr.io/linuxserver/code-server:latest
-    container_name: code-server
     labels:
       - traefik.http.routers.code17editor.rule=Host(`code17-editor.said.ar`)
       - traefik.enable=true
